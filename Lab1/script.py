@@ -1,6 +1,7 @@
-def main():
-    print("Say hello to my little friend!")
-    return
+import requests as req
+import json
+import MySchedule.GroupSchedule as groups
 
-if __name__ == "__main__":
-    main()
+obj = groups.GroupSchedule(group = "953506")
+
+obj.print_schedule()
