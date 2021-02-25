@@ -1,15 +1,17 @@
 import MySchedule.ScheduleModel as model
 
 class ScheduleModelList:
-    def __init__(self, js = None):
+    def __init__(self, js=None):
         self.lessonList = []
         if js is None:
             return
         if js is str:
-            jsonDict = json.loads(js)
+            jsonList = json.loads(js)
         else:
-            jsonDict = js
-        if isinstance(jsonDict, list):
-            for lesson in jsonDict:
+            jsonList = js
+        if isinstance(jsonList, list):
+            for lesson in jsonList:
                 self.lessonList.append(model.ScheduleModel(lesson))
+        else:
+            raise TypeError("Invalid JSON format")
         return
