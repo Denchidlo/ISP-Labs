@@ -1,6 +1,3 @@
-from tasks import Task4 as task
+from tasks import Task6
+import json
 
-X = task.Vector([1, 1, 2])
-Y = X
-Z = X + Y
-print(Z)

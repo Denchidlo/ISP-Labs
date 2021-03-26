@@ -15,3 +15,13 @@ class Task2:
         else:
             raise ValueError("Input must be numerical")
         return
+
+       
+
+def fib(length):
+    a, b = 0, 1
+    for _ in range(length):
+        yield a
+        a, b = b, a + b
+
+print(list(fib(10)))
