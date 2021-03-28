@@ -62,6 +62,8 @@ class Person(metaclass=ModelCreator):
 
 class Student(Person):
     average = AbstractField(float)
+    inner_list = AbstractField(list)
+    inner_dict = AbstractField(dict)
     def __init__(self) -> None:
         print("Magic")
         super().__init__()
