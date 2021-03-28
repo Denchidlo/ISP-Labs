@@ -30,7 +30,7 @@ class ModelCreator(type):
                     self.__setattr__(field, kwargs[field])
                     kwargs.pop(field)
                 else:
-                    if getattr(self, field, None) == None:
+                    if getattr(self, field, None) == None or isinstance(getattr(self, field, None), AbstractField):
                         raise TypeError(f"{self.__class__}.__init__() missing required keyword-only argument: '{field}'")
             default_init(self, *args, **kwargs)
         return field_init
@@ -63,4 +63,5 @@ class Person(metaclass=ModelCreator):
 class Student(Person):
     average = AbstractField(float)
     def __init__(self) -> None:
+        print("Magic")
         super().__init__()
