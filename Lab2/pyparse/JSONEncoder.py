@@ -31,14 +31,14 @@ class JsonEncoder(metaclass=PoolInstancer):
                 for key in obj:
                     new_string = JsonEncoder.tabulate(tab + 1) + key + ": "
                     self.json_strings.append(new_string)
-                    JsonEncoder._getlines(self, obj=obj[key], tab=tab + 1)
+                    JsonEncoder._getlines(self, obj[key], tab + 1)
                     self.json_strings[-1] += JsonEncoder.item_separator
                 new_string = JsonEncoder.tabulate(tab) + JsonEncoder.dict_end
                 self.json_strings.append(new_string)
             else:
                 self.json_strings[-1] += JsonEncoder.list_start
                 for el in obj:
-                    new_string = JsonEncoder._getlines(self, obj=el, tab=tab + 1)
+                    new_string = JsonEncoder._getlines(self, el, tab + 1)
                     self.json_strings.append(new_string)
                     self.json_strings[-1] += JsonEncoder.item_separator
                 new_string = JsonEncoder.tabulate(tab) + JsonEncoder.list_end

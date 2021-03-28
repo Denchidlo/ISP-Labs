@@ -13,7 +13,9 @@ o = task.Person(name="Vitya")
 # inspect.getfullargspec(o.__init__)
 
 encoder = JsonEncoder()
-encoder._getlines(pack_objstate(o), 0)
+state = pack_objstate(o)
+print(state)
+encoder._getlines(state, 0)
 
 print(encoder.json_strings)
 
