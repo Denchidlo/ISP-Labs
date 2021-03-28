@@ -85,5 +85,5 @@ def pack_objstate(obj: object) -> dict:
 
 def pack_callable(obj: object) -> dict:
     result = {}
-    return inspect.findsource(obj)
+    source = inspect.getsource
 
