@@ -65,5 +65,4 @@ class Student(Person):
     inner_list = AbstractField(list)
     inner_dict = AbstractField(dict)
     def __init__(self) -> None:
-        print("Magic")
         super().__init__()

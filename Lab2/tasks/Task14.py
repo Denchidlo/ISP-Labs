@@ -109,6 +109,10 @@ class Interactor:
                 print('\n|--> Stopped <--|')
                 self.stopped = True
                 continue
+            except KeyboardInterrupt:
+                print('\n|--> Stopped <--|')
+                self.stopped = True
+                continue
 
 def __main__():
     inter = Interactor()

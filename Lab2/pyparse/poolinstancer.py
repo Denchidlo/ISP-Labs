@@ -1,6 +1,32 @@
 from sys import getrefcount
 from time import sleep
 
+import threading
+
+def thread_local(func):
+    def lock_func(self, *args, **kwargs):
+        context_id = threading.currentThread().native_id
+        self_contextid = getattr(self, "__lockedby__", None)
+        if  self_contextid == None or self_contextid == context_id:
+            func(self, *args, **kwargs)
+        else:
+            raise threading.ThreadError("Object is locked by another thread")
+    return lock_func
+
+def instancelock(func):
+    def lock_func(self, *args, **kwargs):
+        context_id = threading.currentThread().native_id
+        self_contextid = getattr(self, "__lockedby__", None)
+        if  self_contextid == None:
+            setattr(self, "__lockedby__", context_id)
+            return func(self, *args, **kwargs)
+            setattr(self, "__lockedby__", None)
+        elif self_contextid == context_id:
+            return func(self, *args, **kwargs)
+        else:
+            raise threading.ThreadError("Object is locked by another thread")
+    return lock_func
+
 class PoolInstancer(type):
     def __new__(cls, *args):
         type_ = super(PoolInstancer, cls).__new__(cls, *args)
@@ -11,20 +37,7 @@ class PoolInstancer(type):
         else:
             type_.__new__ = PoolInstancer._poolnew(type_.__new__, True)
         return type_
-        
-    @staticmethod
-    def instancelock(func):
-        def lock_func(self, *args, **kwargs):
-            if getattr(self, "_is_busy", None) == None:
-                raise TypeError(f"{self.__class__} doesn't support instance lock")
-            else:
-                if self._is_busy == False:
-                    self._is_busy = True
-                    func(*args, **kwargs)
-                    self._is_busy = False
-                else:
-                    raise RuntimeError(f"Object {self.__class__}:id({id(self)}) is already used\Runtime was interrupted to avoid undefined behaviour")
-
+            
     @staticmethod
     def _poolnew(func, is_implicit: bool):
         def new(cls, *args, **kwargs):
