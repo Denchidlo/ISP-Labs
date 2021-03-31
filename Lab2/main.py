@@ -1,12 +1,12 @@
+import pickle
 
-from pyparse.json_extended import Json
+import tasks.Task12 as task
 
+globalaa = "adsa"
 
-with open("test.json", "r") as reader:
-    ob = Json.load(reader)
+def func():
+    print("None" + globalaa)
 
-ob.set_text("asdfsadfsdfsadfsaf")
+with open("dump.pickle", "w") as writer:
+    pickle.dump(task.ModelCreator._wrapped_init(func), writer)
 
-print(dir(ob))
-
-ob.analyse()

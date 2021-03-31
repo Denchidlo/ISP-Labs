@@ -3,8 +3,6 @@ import os
 import re
 from datetime import date, datetime, time
 import inspect
-import functools
-import dis
 from sys import builtin_module_names, modules
 
 primitives = set(
@@ -12,11 +10,7 @@ primitives = set(
         int,
         float,
         bool,
-        str,
-        datetime,
-        date,
-        time,
-        complex
+        str
     ])
 
 # Utils
@@ -60,6 +54,53 @@ def is_kvbased(obj: object) -> bool:
             return False
     return True
 
+def fetch_refferences(obj: object):
+    if inspect.ismethod(obj):
+        func = obj.__func_
+        if not inspect.isfunction(func):
+            raise TypeError("{!r} is not a Python function".format(func))
+
+        code = func.__code__
+        # Nonlocal references are named in co_freevars and resolved
+        # by looking them up in __closure__ by positional index
+        if func.__closure__ is None:
+            nonlocal_vars = {}
+        else:
+            nonlocal_vars = {
+                var : cell.cell_contents
+                for var, cell in zip(code.co_freevars, func.__closure__)
+           }
+
+        global_ns = func.__globals__
+        builtin_ns = global_ns.get("__builtins__", builtins.__dict__)
+        if inspect.ismodule(builtin_ns):
+            builtin_ns = builtin_ns.__dict__
+        global_vars = {}
+        builtin_vars = {}
+        unbound_names = set()
+        for name in code.co_names:
+            if name in ("None", "True", "False"):
+                # Because these used to be builtins instead of keywords, they
+                # may still show up as name references. We ignore them.
+                continue
+            try:
+                global_vars[name] = global_ns[name]
+            except KeyError:
+                try:
+                    builtin_vars[name] = builtin_ns[name]
+                except KeyError:
+                    unbound_names.add(name)
+
+            return {
+                ".ref_global": pack(global_vars),
+                ".ref_builtins": pack(builtin_vars), 
+                ".ref_unbound": pack(unbound_names),
+                ".ref_nonlocals": pack(nonlocal_vars)
+            }
+    else:
+        pass
+
+
 def pack_iterable(obj: object) -> dict:
     """Parse object as collection
 
@@ -102,6 +143,8 @@ def pack_objstate(obj: object) -> dict:
 def pack(obj: object):
     if is_primitive(obj):
         return obj
+    if isinstance(obj, datetime):
+        return {".time":str(obj.isoformat())}
     if inspect.ismodule(obj):
         try:
             return {".code": inspect.getsource(obj), ".bigmodule" : f"{obj.__name__}"}
@@ -123,6 +166,9 @@ def pack(obj: object):
 
 def unpack(src: object, objtype=None):
     if isinstance(src, dict):
+        if ".time" in src.keys():
+            result = datetime.fromisoformat(src[".time"])
+            return result
         if ".builtin" in src.keys():
             result = eval("{}".format(src[".builtin"]))
             return result
@@ -183,10 +229,13 @@ def unpack(src: object, objtype=None):
                 for el in src:
                     return_dict[el] = unpack(src[el])
                 return return_dict
-            elif is_collection(src):
-                return_list = []
-                for el in src:
-                    return_list.append(unpack(el))
-                return return_list
+    elif is_collection(src):
+        return_list = []
+        for el in src:
+            return_list.append(unpack(el))
+        return return_list
+    else:
+        return src
 
-
+def pack_binary(obj: object) -> Any:
+    
