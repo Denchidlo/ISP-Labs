@@ -4,32 +4,9 @@ import re
 from datetime import date, datetime, time
 import inspect
 from sys import builtin_module_names, modules
+from typing import Any
 
-def fetch_references(obj: object) -> dict:
-    """Function fetch_reference used to get object references to another classes, variables, functions and so on
-
-        Two cases are possible:
-
-        1)If we come across with the callable we search the following references:
-
-            - global
-
-            - builtins
-
-            - unbound 
-
-            - nonlocals
-
-        2)If we come across with the type we search:
-
-            - metaclass
-
-            - baseclasses 
-
-    """
-    # First case (callable)
-    # Code was copied from inspect.getclosurevars()
-    # check inspect for details 
+def fetch_funcreferences(obj: object) -> dict:
     if inspect.ismethod(obj):
         func = obj.__func_
         if not inspect.isfunction(func):
@@ -68,16 +45,17 @@ def fetch_references(obj: object) -> dict:
 
         return {
             "global": global_vars,
-            "builtins": builtin_vars, 
-            "unbound": unbound_names,
+            "builtins": builtin_vars,
             "nonlocals": nonlocal_vars
         }
-    
-    # Second case (class baseclasses and metaclass)
-    elif inspect.isclass(obj):
-        pass
+    else:
+        raise TypeError("Function was expected")
 
-def deconstruct_type(cls: object) -> dict:
-    deconstructed = {
-        "name": cls,
-    }
+def fetch_typereferences(cls: Any):
+    if inspect.isclass(cls):
+        mro = getmro(cls)
+        metamro = getmro(type(cls)) # for attributes stored in the metaclass
+        metamro = tuple(cls for cls in metamro if cls not in (type, object))
+        class_bases = (cls,) + mro
+        all_bases = class_bases + metamro
+    return all_bases
