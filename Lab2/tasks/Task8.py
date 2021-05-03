@@ -27,3 +27,13 @@ def cached(_func=None, capacity: int = 1000):
 @cached
 def print_m(name, pass_: object):
     return f"{name} : {pass_}"
+
+
+@cached
+def s(a,b):
+    return a + b
+
+print(s(1, 2))
+print(s(1, b=2))
+print(s(a=1, b=2))
+print(s(a=1, b=3))

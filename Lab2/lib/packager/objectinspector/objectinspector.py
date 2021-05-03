@@ -1,5 +1,6 @@
 import builtins
 import inspect
+import re
 
 primitives = set(
     [
@@ -9,11 +10,16 @@ primitives = set(
         str
     ])
 
-# Utils
-def is_primitive(obj: object) -> bool:
+
+def is_magicmarked(s: str) -> bool:  
+    return re.match("^__(?:\w+)__$", s) != None
+
+
+def is_primitive(obj: object) -> bool: 
     return type(obj) in primitives
 
-def is_basetype(obj: object) -> bool:
+
+def is_basetype(obj: object) -> bool: 
     for el in primitives:
         if el.__name__ == obj.__name__:
             return True
@@ -22,18 +28,21 @@ def is_basetype(obj: object) -> bool:
             return True
     return False
 
-def is_instance(obj):
+
+def is_instance(obj): # pragma: no cover
     if not hasattr(obj, '__dict__'):
         return False
-    if inspect.isroutine(obj): 
+    if inspect.isroutine(obj):
         return False
     if inspect.isclass(obj):
         return False
     else:
         return True
 
+
 def is_none(obj: object) -> bool:
     return obj is None
+
 
 def fetch_typereferences(cls):
     if inspect.isclass(cls):
@@ -41,26 +50,27 @@ def fetch_typereferences(cls):
         metamro = inspect.getmro(type(cls))
         metamro = tuple(cls for cls in metamro if cls not in (type, object))
         class_bases = mro
-        if not type in mro and len(metamro) != 0:
+        if not type in mro and len(metamro) != 0: # pragma: no cover
             return class_bases[1:-1], metamro[0]
-        else:
+        else: # pragma: no cover
             return class_bases[1:-1], None
-            
-def fetch_funcreferences(func: object):
+
+
+def fetch_funcreferences(func: object): # pragma: no cover
     if inspect.ismethod(func):
         func = func.__func__
 
-    if not inspect.isfunction(func):
+    if not inspect.isfunction(func): # pragma: no cover
         raise TypeError("{!r} is not a Python function".format(func))
 
     code = func.__code__
-    if func.__closure__ is None:
+    if func.__closure__ is None: # pragma: no cover
         nonlocal_vars = {}
     else:
         nonlocal_vars = {
-            var : cell.cell_contents
+            var: cell.cell_contents
             for var, cell in zip(code.co_freevars, func.__closure__)
-       }
+        }
 
     global_ns = func.__globals__
     builtin_ns = global_ns.get("__builtins__", builtins.__dict__)
@@ -69,7 +79,7 @@ def fetch_funcreferences(func: object):
     global_vars = {}
     builtin_vars = {}
     unbound_names = set()
-    for name in code.co_names:
+    for name in code.co_names: # pragma: no cover
         if name in ("None", "True", "False"):
             continue
         try:
@@ -81,13 +91,14 @@ def fetch_funcreferences(func: object):
                 unbound_names.add(name)
 
     return (nonlocal_vars, global_vars,
-                       builtin_vars, unbound_names)
-            
-def deconstruct_class(cls):
+            builtin_vars, unbound_names)
+
+
+def deconstruct_class(cls):  
     attributes = inspect.classify_class_attrs(cls)
     deconstructed = []
     for attr in attributes:
-        if attr.defining_class == object or attr.defining_class == type:
+        if attr.defining_class == object or attr.defining_class == type or attr.name in ["__dict__", "__weakref__"]: # pragma: no cover
             continue
         else:
             deconstructed.append((
@@ -97,31 +108,33 @@ def deconstruct_class(cls):
             ))
     return deconstructed
 
-def deconstruct_func(func):
-    references = fetch_funcreferences(func)
-    func_code = inspect.getsource(func)
-    return {
-        ".name": func.__name__,
-        ".code": func_code,
-        ".references": references
-    }
 
-def getfields(obj):
+def deconstruct_func(func):
+    code = {el: getattr(func.__code__, el) for el in func.__code__.__dir__() if not is_magicmarked(el) and "co" in el}
+
+    refs = fetch_funcreferences(func)
+    defaults = func.__defaults__
+    return {'.name': func.__name__, '.code': code, '.references': refs, '.defaults': defaults}
+
+
+def getfields(obj): # pragma: no cover
     """Try to get as much attributes as possible"""
     members = inspect.getmembers(obj)
-    
+
     cls = type(obj)
     type_attrnames = [el.name for el in inspect.classify_class_attrs(cls)]
-    
+
     result = {}
-    
+
     for member in members:
         if not member[0] in type_attrnames:
             result[member[0]] = member[1]
-            
+
     return result
 
-def deconstruct_instance(obj):
+
+def deconstruct_instance(obj): # pragma: no cover
     type_ = type(obj)
     fields = getfields(obj)
+
     return (type_, fields)

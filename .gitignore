@@ -2,3 +2,5 @@ __pycache__
 src
 .gitignore
 trash
+dist
+cli
