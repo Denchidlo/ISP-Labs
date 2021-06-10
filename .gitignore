@@ -24,3 +24,8 @@ telebot-env
 dev-env
 
 # Evivroment configs
+src
+.gitignore
+trash
+dist
+cli
